@@ -6,3 +6,6 @@
 # Pyre type checker
 
 .vscode
+
+__pycache__/
+venv

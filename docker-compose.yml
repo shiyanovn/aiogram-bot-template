@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  database:
+    container_name: 'postgres-aiogram'
+    image: 'postgres:14'
+    restart: always
+    networks:
+      - default
+    env_file:
+      - .env
+    ports:
+      - '${POSTGRES_PORT}:5432'
+    environment:
+      POSTGRES_MAX_CONNECTIONS: 200
+    volumes:
+      - telegram-data:/var/lib/postgresql/data
+      - ./deploy/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      retries: 1
+      start_period: 5s
+      timeout: 2s
+
+  telegram-bot:
+    container_name: 'aiogram'
+    build: .
+    env_file: .env
+    environment:
+      - POSTGRES_HOST=postgres-aiogram
+    command: [ "sh", "-c", "wait-for-it postgres-aiogram:5432 -- poetry run python -m app" ]
+    networks:
+      - default
+
+networks:
+  default:
+volumes:
+  telegram-data:
